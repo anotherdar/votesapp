@@ -41,8 +41,13 @@ namespace VotesApi.Controllers
                     file.CopyTo(stream);
                     stream.Position = 0;
 
+                    // para manejar diferentes tipos de caracteres ya que estamos usando un archivo
+                    // .xlsx es probable que dentro de la suit de .net core no se encuentren esos
+                    // caracteres especiales.
                     System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
+                    // para leer el archivo .xlsx
+                    // utilizando el paquete ExcelDataReader
                     using var reader = ExcelReaderFactory.CreateReader(stream);
                     var result = reader.AsDataSet(new ExcelDataSetConfiguration()
                     {
@@ -57,7 +62,10 @@ namespace VotesApi.Controllers
                     // siclo for para recorrer la información del archivo
                     for (int i = 1; i < table.Rows.Count; i++)
                     {
+                        // aqui tomamos la segunda fila ya que en la primera puede haber
+                        // cabeceras tales como Candidato/votos/genero
                         var row = table.Rows[i];
+
                         // aquí guardamos la información en base a nuestro modelo
                         var vote = new Vote
                         {
@@ -66,25 +74,47 @@ namespace VotesApi.Controllers
                             Gender = row[2]?.ToString() ?? string.Empty
                         };
                         // una vez asignada la información procedemos a guardarla en memoria
-                        // para luego ser procesada
+                        // que este caso seria un objeto tipo 
+                        /*
+                            {Votes: 10, Candidate: Manuel, Gender: hombre | mujer}
+                        */
+                        // una vez creada procedemos a guardarla en memoria
+                        // en un forma mas simple para luego ser procesada
                         votes.Add(vote);
                     }
                 }
 
                 // Procesar los datos
+                // Sum nos sumara todos los votos sean estos de mujer o hombre
+                // de esta forma tendremos el total
                 var totalVotes = votes.Sum(v => v.Votes);
-                // total de votos para hombre
+                // aqui filtramos por genero para poder saber cuantos votos fueron
+                // por hombres
                 var maleVotes = votes.Where(v => v.Gender == "Hombre").Sum(v => v.Votes);
-                // total de votos para mujer
+                // aqui filtramos por genero para poder saber cuantos votos fueron
+                // por mujeres
                 var femaleVotes = votes.Where(v => v.Gender == "Mujer").Sum(v => v.Votes);
 
                 // votos de los candidatos
+                // Aqui simplemente agrupamos por candidato y convertimos a un diccionario
+                // de tal forma que podamos manejar esta información mas fácil para luego
+                // sacar porcentajes
                 var candidateVotes = votes
                     .GroupBy(v => v.Candidate)
                     .ToDictionary(g => g.Key, g => g.Sum(v => v.Votes));
                 // mas votado
-                var topCandidate = candidateVotes.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
+                // aquí simplemente buscamos el candidato mas votado verificando
+                // que los votos del elemento anterior sea mayor o menor al siguiente en caso de ser mayo entonces
+                // en la siguiente imitación del ciclo se le dice al valor presente que cambie por el elemento que sigue y 
+                // asi hasta determinar quien es el candidato con mas votos
+                // ej: candidato1 > candidato2 si es correcto en el siguiente paso se procede a comparar
+                // candidato2 > candidato3 y asi hasta encontrar el mayor. 
+                var topCandidate = candidateVotes.Aggregate((current, next) => current.Value > next.Value ? current : next).Key;
                 // porcentajes
+                // aui simplemente se procede a calcular el porcentaje en base a la totalidad de los votos
+                // es decir votos del candidato dividido entre el total de botos multiplicado por 100
+                // ejemplo: decimos que Manuel tiene 250 votos, para calcular el porcentaje sabiendo que la totalidad de votos es 700
+                // (250/700) = 0.3571 * 100 = 35.71%
                 var candidatePercentages = candidateVotes
                     .Select(kvp => new
                     {
@@ -92,7 +122,34 @@ namespace VotesApi.Controllers
                         value = Math.Round(kvp.Value / (double)totalVotes * 100, 2)
                     }).ToList();
 
-                // si todo sale bien retornar un status code 200 con la información de las votaciones
+                // una vez tenemos todos los datos procedamos a enviar la informacion
+                // procesada de la siguiente manera
+                /*
+                {
+                    "totalDeVotaciones": 615,
+                    "votosDeHombres": 220,
+                    "votosDeMujer": 395,
+                    "mejorCandidato": "Manuela del Toro",
+                    "porcentajes": [
+                        {
+                            "name": "Manuel Rodriguez",
+                            "value": 19.51
+                        },
+                        {
+                            "name": "Manuela del Toro",
+                            "value": 48.78
+                        },
+                        {
+                            "name": "Fracisco Perez",
+                            "value": 16.26
+                        },
+                        {
+                            "name": "Maria de Jesus",
+                            "value": 15.45
+                        }
+                    ]
+                }
+                */
                 return Ok(new
                 {
                     totalDeVotaciones = totalVotes,
