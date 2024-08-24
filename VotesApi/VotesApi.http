@@ -1,0 +1,6 @@
+@VotesApi_HostAddress = http://localhost:5163
+
+GET {{VotesApi_HostAddress}}/api/votes/upload
+Accept: application/json
+
+###

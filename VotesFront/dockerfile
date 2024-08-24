@@ -1,0 +1,27 @@
+# Usa una imagen base de Node.js
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copia el archivo de configuración de npm y las dependencias
+COPY package.json ./
+
+# Instala las dependencias
+RUN npm install
+
+# Instala serve globalmente
+RUN npm install -g serve
+
+# Copia el resto de la aplicación
+COPY . .
+
+ENV VITE_API_URL=http://localhost:5001/api
+
+# Construye la aplicación React
+RUN npm run build
+
+# Expon el puerto en el que se servirá la aplicación
+EXPOSE 3000
+
+# Usa serve para servir la aplicación desde el directorio build
+CMD [ "serve", "-s", "dist" ]

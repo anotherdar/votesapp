@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./VotesFront
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"  # Expose port 3000 to the host
+    environment:
+      - VITE_API_URL=http://localhost:5001/api
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./VotesApi
+      dockerfile: Dockerfile
+    ports:
+      - "5001:80"  # Expose port 5001 to the host
+    environment:
+      - ASPNETCORE_URLS=http://+:80
+      - ASPNETCORE_ENVIRONMENT=Production
