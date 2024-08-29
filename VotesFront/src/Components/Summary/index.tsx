@@ -53,7 +53,7 @@ export const Summary: React.FC = () => {
             {/*  */}
             <h2 className="font-semibold text-gray-700 mt-2">Porcentajes de votos por candidato:</h2>
             {/*  */}
-            <ul className="flex gap-4 list-none flex-wrap">
+            <ul className="flex gap-4 list-none flex-wrap pb-6">
                 {(votesInfo?.porcentajes || []).map((candidate) => (
                     <li key={candidate.name} className="border border-gray-200 rounded-lg p-4 w-1/5">
                         <div className="flex items-center gap-2">

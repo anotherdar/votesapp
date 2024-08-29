@@ -15,7 +15,7 @@ export function App() {
         <FileUploader />
       </div>
       {/* dashboard */}
-      <div className="w-full flex justify-center items-center gap-4">
+      <div className="w-full flex justify-center items-center gap-4 overflow-y-auto pb-6">
         <Summary />
       </div>
     </div>
