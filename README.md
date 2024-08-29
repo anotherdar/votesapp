@@ -1,1 +1,3 @@
 # votesapp
+
+for educational purposes.
